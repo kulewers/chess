@@ -27,11 +27,11 @@ class Board
     grid[2][2] = Queen.new(0, self)
   end
 
-  def print_board(walkables = [])
+  def print_board(moves = [])
     grid.to_enum.with_index.reverse_each do |row, row_idx|
       print((row_idx + 1).to_s)
       row.each_with_index do |square, column_idx|
-        string = "#{get_unicode(square)}#{walkables.include?([row_idx, column_idx]) ? '•' : ' '}"
+        string = "#{get_unicode(square)}#{moves.include?([row_idx, column_idx]) ? '•' : ' '}"
         if (row_idx + column_idx).even?
           print(string.bg_gray)
         else
@@ -52,17 +52,6 @@ class Board
     end
   end
 
-  def locate_piece(piece)
-    8.times do |row|
-      column = grid[row].index(piece)
-      return [row, column] unless column.nil?
-    end
-  end
-
-  def out_of_bounds?(array)
-    return true unless array.all? { |pos| pos.between?(0, 7) }
-  end
-
   def letter_to_num(letter)
     ('a'..'h').zip(0..7).to_h[letter]
   end
@@ -81,133 +70,12 @@ class Board
     user_input = gets.chomp until squares.include?(user_input)
     [user_input[1].to_i - 1, letter_to_num(user_input[0])]
   end
-
-  def directional_moves(piece, directions)
-    moves = []
-    location = locate_piece(piece)
-    directions.each do |direction|
-      (1..7).each do |steps|
-        move = [location.first + direction.first * steps, location.last + direction.last * steps]
-        break if out_of_bounds?(move)
-
-        potential_pos = grid[move.first][move.last]
-        if potential_pos.nil?
-          moves << move
-        elsif potential_pos.team != piece.team
-          moves << move
-          break
-        elsif potential_pos.team == piece.team
-          break
-        end
-      end
-    end
-    moves
-  end
-
-  def knight_moves(piece)
-    moves = []
-    location = locate_piece(piece)
-    piece.class::KNIGHT_MOVES.each do |direction|
-      move = [location.first + direction.first, location.last + direction.last]
-      next if out_of_bounds?(move)
-
-      potential_pos = grid[move.first][move.last]
-      moves << move if potential_pos.nil? || potential_pos.team != piece.team
-    end
-    moves
-  end
-
-  def pawn_moves(piece)
-    moves = []
-    location = locate_piece(piece)
-    team = piece.team
-    [1, -1].each_with_index do |vert_direction, idx|
-      next unless idx == team
-
-      if location.first == 1 || location.first == 6
-        moves << [location.first + vert_direction * 2, location.last]
-      end
-      [1, -1].each do |hor_directoin|
-        move_attack = [location.first + vert_direction * 1, location.last + hor_directoin]
-        next if out_of_bounds?(move_attack)
-
-        potential_pos = grid[move_attack.first][move_attack.last]
-        next if potential_pos.nil?
-
-        moves << move_attack if potential_pos.team != piece.team
-      end
-      move_forward = [location.first + vert_direction * 1, location.last]
-      break if out_of_bounds?(move_forward)
-
-      moves << move_forward if grid[move_forward.first][move_forward.last].nil?
-    end
-    moves
-  end
 end
 
 # function to find moves horizontally, vertically and diagonally
 # args are (piece, directions), directions is an array of arrays: [vertical, horizontal]
 # [-1 for down / 1 for up, -1 for left / 1 for right]
 # 0 to keep each respecive position
-
-# PAWN
-
-# args(team)
-# moves = []
-# location = locate_piece(piece)
-# if team == 0
-#   if location.first == 1
-#     moves << [location.first + 2, location.last]
-#   end
-#   [-1, 1].each do |direction|
-#     move = [location.first + 1, location.last + direction]
-#     next if out_of_bounds?(move)
-#
-#     potential_pos = grid[move.first][move.last]
-#     return if potential_pos.nil?
-#
-#     moves << move if potential_pos.team != piece.team
-#   end
-#   move_forward = [location.first + 1, location.last]
-#   moves << move_forward unless out_of_bounds?(move_forward)
-
-# args(team)
-# moves = []
-# location = locate_piece(piece)
-# [1, -1].each_with_index do |vert_direction, idx|
-#   next unless idx == team
-#
-#   if location.first == 1 || location.first == 6
-#     moves << [location.fist + vert_direction * 2, location.last]
-#   end
-#   [1, -1].each do |hor_directoin|
-#     move_attack = [location.first + vert_direction * 1, location.last + hor_directoin]
-#     next if out_of_bounds?(move_attack)
-#
-#     potential_pos = grid[move_attack.fisrt][move_attack.last]
-#     return if potential_pos.nil?
-#
-#     moves << move_attack if potential_pos.team != piece.team
-#   end
-#   move_forward = [location.first + vert_direction * 1, location.last]
-#   moves << move_forward unless out_of_bounds?(move_forward)
-# end
-# moves
-
-#   if (location.first == 6 && team == 1) || (location.first == 1 && team == 0)
-#     moves << team == 1 ? [location.first - 2, location.last] : [location.first + 2, location.last]
-#   end
-#   [-1, 1].each do |direction|
-#     move = team == 1 ? [location.first - 1, location.last + direction] : [location.first + 1, location.last + direction]
-#     next if out_of_bounds?(move)
-#
-#     potential_pos = grid[move.first][move.last]
-#     return if potential_pos.nil?
-#
-#     moves << move if potential_pos.team != piece.team
-#   end
-#   move_forward = team == 1 ? [location.first - 1, location.last] : [location.first + 1, location.last]
-#   moves << move_forward unless out_of_bounds?(move_forward)
 
 # calculate the possible moves of a selected piece
 # find spots availabe for travel
