@@ -5,6 +5,16 @@ class Board
     @grid = Array.new(8) { |_| Array.new(8, nil) }
   end
 
+  def [](location)
+    row, column = location
+    grid[row][column]
+  end
+
+  def []=(location, data)
+    row, column = location
+    grid[row][column] = data
+  end
+
   def set_pieces
     [1, 6].each_with_index do |row, team|
       8.times do |column|
@@ -20,11 +30,6 @@ class Board
         grid[row][2 - (column * 5)] = Bishop.new(team, self)
       end
     end
-    grid[3][3] = Queen.new(0, self)
-    grid[3][1] = Knight.new(0, self)
-    grid[2][1] = Pawn.new(1, self)
-    grid[2][3] = Pawn.new(1, self)
-    grid[2][2] = Queen.new(0, self)
   end
 
   def print_board(moves = [])
@@ -52,42 +57,73 @@ class Board
     end
   end
 
-  def letter_to_num(letter)
-    ('a'..'h').zip(0..7).to_h[letter]
-  end
-
   def piece_select(team)
     squares = []
     (1..8).each_with_index do |number, row|
       ('a'..'h').each_with_index do |letter, column|
-        next if grid[row][column].nil?
+        next if self[[row, column]].nil?
 
-        squares << "#{letter}#{number}" if grid[row][column].team == team
+        squares << "#{letter}#{number}" if self[[row, column]].team == team
       end
     end
-    p squares
     user_input = 0
     user_input = gets.chomp until squares.include?(user_input)
-    [user_input[1].to_i - 1, letter_to_num(user_input[0])]
+    piece = self[name_to_location(user_input)]
+    puts "You selected a piece of type #{piece.class}"
+    piece
+  end
+
+  def move_piece(piece, moves)
+    squares = []
+    moves.each do |move|
+      squares << location_to_name(move)
+    end
+    user_input = 0
+    user_input = gets.chomp until squares.include?(user_input)
+
+    current_location = piece.location
+    chosen_location = name_to_location(user_input)
+    potential_pos = self[chosen_location]
+    puts("You captured enemy #{potential_pos.class}") unless potential_pos.nil?
+    if promote?(piece, chosen_location)
+      promotions = %w[queen rook bishop knight]
+      puts('Select promotion: Queen, Rook, Bishop or Knight')
+      promotion = ''
+      promotion = gets.chomp.downcase until promotions.include?(promotion)
+      case promotion
+      when 'queen'
+        self[chosen_location] = Queen.new(piece.team, self)
+      when 'rook'
+        self[chosen_location] = Rook.new(piece.team, self)
+      when 'bishop'
+        self[chosen_location] = Bishop.new(piece.team, self)
+      when 'knight'
+        self[chosen_location] = Knight.new(piece.team, self)
+      end
+      self[current_location] = nil
+      return
+    end
+    self[chosen_location] = piece
+    self[current_location] = nil
+  end
+
+  def location_to_name(array)
+    string = ''
+    string += (0..7).zip('a'..'h').to_h[array.last]
+    string + (array.first + 1).to_s
+  end
+
+  def name_to_location(string)
+    array = []
+    array << string[-1].to_i - 1
+    array << ('a'..'h').zip(0..7).to_h[string[0]]
+  end
+
+  def promote?(piece, location)
+    return unless piece.instance_of?(Pawn)
+
+    return unless location.first == 0 || location.first == 7
+
+    return true
   end
 end
-
-# function to find moves horizontally, vertically and diagonally
-# args are (piece, directions), directions is an array of arrays: [vertical, horizontal]
-# [-1 for down / 1 for up, -1 for left / 1 for right]
-# 0 to keep each respecive position
-
-# calculate the possible moves of a selected piece
-# find spots availabe for travel
-# display travelable spots on the board
-# ask for input and break if it is included with travelable spots
-# or reselect the figure if the input was 'reselect'
-# return the input and place the piece at that location on the grid,
-# removing it from it's current position
-
-# game loop:
-
-# ask for a piece to select
-# ask for a square to place the piece to
-# make sure save and reselect are an option
-# change player turns
